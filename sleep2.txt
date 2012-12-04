@@ -1,0 +1,10 @@
+[
+  {"caller": "foo1", "calls":"foo2"},
+  {"caller": "foo1", "calls":"foo3"},
+  {"caller": "foo1", "calls":"foo4"},
+  {"caller": "foo2", "calls":"foo5"},
+  {"caller": "foo2", "calls":"foo6"},
+  {"caller": "foo6", "calls":"foo7"},
+  {"caller": "foo6", "calls":"foo8"},
+  {"caller": "foo6", "calls":"foo9"}
+]
