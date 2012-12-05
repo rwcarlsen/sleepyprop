@@ -21,11 +21,9 @@ func main() {
 		list := make([]*Sleeper, 0)
 		data, err := ioutil.ReadFile(name)
 		if err != nil {
-			log.Printf("err on file %v: %v", name, err)
-		}
-
-		if err := json.Unmarshal(data, &list); err != nil {
-			log.Printf("err on file %v: %v", name, err)
+			log.Fatalf("err: %v", err)
+		} else if err := json.Unmarshal(data, &list); err != nil {
+			log.Fatalf("err on file '%v': %v", name, err)
 		}
 
 		for _, s := range list {
@@ -33,7 +31,12 @@ func main() {
 		}
 	}
 
-	for _, s := range allFuncs.Sleepy() {
+	if len(*initSleepers) == 0 {
+		log.Fatal("No initial sleepers provided.")
+	}
+
+	initNames := strings.Split(*initSleepers, ",")
+	for _, s := range allFuncs.Sleepy(initNames) {
 		fmt.Println(s)
 	}
 }
@@ -52,9 +55,8 @@ func (m CallMap) markSleepy(name string, sleepy map[string]bool) {
 	}
 }
 
-func (m CallMap) Sleepy() []string {
+func (m CallMap) Sleepy(initNames []string) []string {
 	sleepy := map[string]bool{}
-	initNames := strings.Split(*initSleepers, ",")
 	for _, initial := range initNames {
 		m.markSleepy(initial, sleepy)
 	}
