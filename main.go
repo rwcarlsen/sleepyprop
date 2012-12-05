@@ -54,13 +54,13 @@ func main() {
 		}
 	} else if *ocaml {
 		var buf bytes.Buffer
-		for _, s := range sleepy {
+		for s, _ := range sleepy {
 			fmt.Fprintf(&buf, "\"%v\";\n", s)
 		}
 		buf.Truncate(buf.Len() - 2)
 		fmt.Printf("[%s]", buf.Bytes())
 	} else {
-		for _, s := range sleepy {
+		for s, _ := range sleepy {
 			fmt.Println(s)
 		}
 	}
