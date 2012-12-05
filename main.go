@@ -6,20 +6,32 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 )
 
 var initSleepers = flag.String("sleepy", "", "comma-sep list of initial sleepers")
+var preprocess = flag.Bool("preprocess", false, "clean up the input files first")
 
 func main() {
 	flag.Parse()
 	names := flag.Args()
 
+
+	if len(*initSleepers) == 0 {
+		log.Fatal("No initial sleepers provided.")
+	}
+
 	allFuncs := CallMap{}
 	for _, name := range names {
 		list := make([]*Sleeper, 0)
 		data, err := ioutil.ReadFile(name)
+
+		if *preprocess {
+			data = cleanup(data)
+		}
+
 		if err != nil {
 			log.Fatalf("err: %v", err)
 		} else if err := json.Unmarshal(data, &list); err != nil {
@@ -31,14 +43,16 @@ func main() {
 		}
 	}
 
-	if len(*initSleepers) == 0 {
-		log.Fatal("No initial sleepers provided.")
-	}
-
 	initNames := strings.Split(*initSleepers, ",")
 	for _, s := range allFuncs.Sleepy(initNames) {
 		fmt.Println(s)
 	}
+}
+
+func cleanup(data []byte) []byte {
+	data = bytes.Trim(data, " \t\r\n,][")
+	data = append([]byte("["), data...)
+	return append(data, byte(']'))
 }
 
 // map[callee]callers
