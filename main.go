@@ -14,6 +14,7 @@ import (
 var initSleepers = flag.String("sleepy", "", "comma-sep list of initial sleepers")
 var preprocess = flag.Bool("preprocess", false, "clean up the input files first")
 var ocaml = flag.Bool("ocaml-out", false, "format output as ocaml list")
+var chain = flag.Bool("chains", false, "show the sleepy chain for every function instead of normal output")
 
 func main() {
 	flag.Parse()
@@ -46,7 +47,12 @@ func main() {
 
 	initNames := strings.Split(*initSleepers, ",")
 	sleepy := allFuncs.Sleepy(initNames)
-	if *ocaml {
+
+	if *chain {
+		for name, sleepChain := range sleepy {
+			fmt.Printf("%v: %v\n", name, sleepChain)
+		}
+	} else if *ocaml {
 		var buf bytes.Buffer
 		for _, s := range sleepy {
 			fmt.Fprintf(&buf, "\"%v\";\n", s)
@@ -69,28 +75,28 @@ func cleanup(data []byte) []byte {
 // map[callee]callers
 type CallMap map[string][]string
 
-func (m CallMap) markSleepy(name string, sleepy map[string]bool) {
-	if sleepy[name] {
+func (m CallMap) Sleepy(initNames []string) map[string][]string {
+	sleepy := map[string][]string{}
+	for _, initial := range initNames {
+		m.markSleepy(initial, "", sleepy)
+	}
+	return sleepy
+}
+
+func (m CallMap) markSleepy(caller, callee string, sleepy map[string][]string) {
+	if len(sleepy[caller]) > 0 {
 		return // prevent infinite recursion
 	}
 
-	sleepy[name] = true
-	for _, caller := range m[name] {
-		m.markSleepy(caller, sleepy)
-	}
-}
-
-func (m CallMap) Sleepy(initNames []string) []string {
-	sleepy := map[string]bool{}
-	for _, initial := range initNames {
-		m.markSleepy(initial, sleepy)
+	if len(sleepy[callee]) > 0 {
+		sleepy[caller] = append([]string{caller}, sleepy[callee]...)
+	} else {
+		sleepy[caller] = []string{caller}
 	}
 
-	sleepyList := make([]string, 0, len(sleepy))
-	for name, _ := range sleepy {
-		sleepyList = append(sleepyList, name)
+	for _, newCaller := range m[caller] {
+		m.markSleepy(newCaller, caller, sleepy)
 	}
-	return sleepyList
 }
 
 func (m CallMap) String() string {
