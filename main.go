@@ -13,6 +13,7 @@ import (
 
 var initSleepers = flag.String("sleepy", "", "comma-sep list of initial sleepers")
 var preprocess = flag.Bool("preprocess", false, "clean up the input files first")
+var ocaml = flag.Bool("ocaml-out", false, "format output as ocaml list")
 
 func main() {
 	flag.Parse()
@@ -44,8 +45,18 @@ func main() {
 	}
 
 	initNames := strings.Split(*initSleepers, ",")
-	for _, s := range allFuncs.Sleepy(initNames) {
-		fmt.Println(s)
+	sleepy := allFuncs.Sleepy(initNames)
+	if *ocaml {
+		var buf bytes.Buffer
+		for _, s := range sleepy {
+			fmt.Fprintf(&buf, "\"%v\";\n", s)
+		}
+		buf.Truncate(buf.Len() - 2)
+		fmt.Printf("[%s]", buf.Bytes())
+	} else {
+		for _, s := range sleepy {
+			fmt.Println(s)
+		}
 	}
 }
 
